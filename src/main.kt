@@ -1,3 +1,3 @@
 fun main(){
-    DBHelper("university")
+    DBHelper("university").createDatabase()
 }
