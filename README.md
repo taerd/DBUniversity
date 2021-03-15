@@ -13,3 +13,4 @@ open server ultimate - phpMyAdmin\n
 
 
 На данный момент проект не завершен
+![universityDBproekt](https://user-images.githubusercontent.com/50706625/111218918-7498a600-85e8-11eb-8d0e-adb8c52f2826.jpg)
