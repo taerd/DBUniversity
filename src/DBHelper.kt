@@ -26,6 +26,7 @@ class DBHelper(
     fun createDatabase(){
         connect()
         createTables()
+
         disconnect()
     }
 
@@ -69,6 +70,7 @@ class DBHelper(
 
     /**
      * Метод непосредственно создания таблицы
+     * и ее связывания
      */
     private fun createTables() {
         //Разбитие запроса на батчи и объединение их в транзакцию (множество запросов)
@@ -100,149 +102,75 @@ class DBHelper(
                     "  `department_code` int NOT NULL\n" +
                     ")")
 
+            addBatch("DROP TABLE IF EXISTS `direction`")
+            addBatch("CREATE TABLE `direction` (\n" +
+                    "  `direction_code` int NOT NULL PRIMARY KEY,\n" +
+                    "  `direction_name` varchar(30) NOT NULL\n" +
+                    ")")
+
+            addBatch("DROP TABLE IF EXISTS `department`")
+            addBatch("CREATE TABLE `department` (\n" +
+                    "  `department_code` int NOT NULL PRIMARY KEY,\n" +
+                    "  `department_name` varchar(30) NOT NULL\n" +
+                    ")")
+
+            addBatch("DROP TABLE IF EXISTS `curriculum_subject`")
+            addBatch("CREATE TABLE `curriculum_subject` (\n" +
+                    "  `subject_id` int NOT NULL PRIMARY KEY,\n" +
+                    "  `curriculum_number` int NOT NULL,\n" +
+                    "  `subject_code` int NOT NULL,\n" +
+                    "  `semestr` int UNSIGNED NOT NULL,\n" +
+                    "  `number_of_hours` int UNSIGNED NOT NULL,\n" +
+                    "  `reporting_form` set('test','differential_test','exam') NOT NULL\n" +
+                    ")")
+
+            addBatch("DROP TABLE IF EXISTS `curriculum`")
+            addBatch("CREATE TABLE `curriculum` (\n" +
+                    "  `curriculum_number` int NOT NULL PRIMARY KEY,\n" +
+                    "  `year_study` year NOT NULL,\n" +
+                    "  `direction_code` int NOT NULL\n" +
+                    ")")
+
+            addBatch("DROP TABLE IF EXISTS `academic_perfomance`")
+            addBatch("CREATE TABLE `academic_perfomance` (\n" +
+                    "  `id_student` int NOT NULL  ,\n" +
+                    "  `subject_id` int NOT NULL ,\n" +
+                    "  `score` tinyint NOT NULL,\n" +
+                    "  `try` set('1','2','3') NOT NULL\n" +
+                    ")")
+
+
+            addBatch("ALTER TABLE `academic_perfomance`\n" +
+                    "  ADD PRIMARY KEY (`id_student`,`subject_id`),\n" +
+                    "  ADD KEY `academic_perfomance_ibfk_2` (`subject_id`)")
+
+
+            //Связывание Таблиц
+            addBatch("ALTER TABLE `academic_perfomance`\n" +
+                    "  ADD CONSTRAINT `academic_perfomance_ibfk_1` FOREIGN KEY (`id_student`) REFERENCES `student` (`id_student`) ON DELETE RESTRICT ON UPDATE CASCADE,\n" +
+                    "  ADD CONSTRAINT `academic_perfomance_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `curriculum_subject` (`subject_id`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            addBatch("ALTER TABLE `curriculum`\n" +
+                    "  ADD CONSTRAINT `curriculum_direction` FOREIGN KEY (`direction_code`) REFERENCES `direction` (`direction_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            addBatch("ALTER TABLE `curriculum_subject`\n" +
+                    "  ADD CONSTRAINT `curriculum_subject_ibfk_1` FOREIGN KEY (`curriculum_number`) REFERENCES `curriculum` (`curriculum_number`) ON DELETE RESTRICT ON UPDATE CASCADE,\n" +
+                    "  ADD CONSTRAINT `curriculum_subject_ibfk_2` FOREIGN KEY (`subject_code`) REFERENCES `discipline` (`subject_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            addBatch("ALTER TABLE `discipline`\n" +
+                    "  ADD CONSTRAINT `discipline_ibfk_1` FOREIGN KEY (`department_code`) REFERENCES `department` (`department_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            addBatch("ALTER TABLE `group`\n" +
+                    "  ADD CONSTRAINT `group_curriculum` FOREIGN KEY (`curriculum_id`) REFERENCES `curriculum` (`curriculum_number`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            addBatch("ALTER TABLE `student`\n" +
+                    "  ADD CONSTRAINT `student_group` FOREIGN KEY (`group`) REFERENCES `group` (`group_number`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+
+            //Конец транзакции
+            addBatch("COMMIT")
+            executeBatch()
         }
+
     }
 
-
-    /*
-    init{
-        try{
-            connection =
-                DriverManager.getConnection(//статический метод getConnection возвращает объект типа connection
-                    "jdbc:mysql://$address:$port/$dbName?serverTimezone=UTC",//ссылка для доступа( протокол доступа jdbc..)
-                    user,
-                    password
-                )
-            /**
-             * Демонстрационная часть
-             */
-            val s = connection?.createStatement() //создание утверждения
-            CreateDB(connection!!)
-            /*
-            var sql_create ="create table if not exists `students` (\n" +
-                    "    `id` int primary key auto_increment,\n" +
-                    "    `lastname` varchar(40) not null,\n" +
-                    "    `firstname` varchar(40) not null,\n" +
-                    "    `middlename` varchar(40)  null,\n" +
-                    "    `group` varchar(10) not null,\n" +
-                    "    `sex` set('male','female') not null,\n" +
-                    "    `birthday` date not null,\n" +
-                    "    index `name` (`lastname`,`firstname`,`middlename`)\n" +
-                    "                                      )"
-            s?.execute(sql_create)
-
-            sql_create="create table if not exists `groups` (\n" +
-                    "    `group_number` varchar(10) primary key,\n" +
-                    "    `curriculum_id` int not null,\n" +
-                    "    `qualification_number` set('1','2','3','4') not null\n" +
-                    ");"
-            s?.execute(sql_create)
-            sql_create="create table if not exists `qualification`(\n" +
-                    "    `number_qualification` int(1) not null primary key ,\n" +
-                    "    `name` SET('bachelor','`s degree master','`s degree postgraduate study') NOT NULL\n" +
-                    ");"
-            s?.execute(sql_create)
-            sql_create="create table if not exists `direction`(\n" +
-                    "    `code_number` int primary key,\n" +
-                    "    `name` varchar(30) not null\n" +
-                    ");"
-
-             */
-            //s?.execute ("delete from `test`")
-
-/*
-            (1..10).forEach{
-                val sql_insert = "insert into `test` (text_field,int_field) values ('ТекСтовОе ПоЛе :)',$it)"
-                s?.execute(sql_insert)//Добавление записей в таблицу
-            }
-*/
-            //Защита от sql инъекций
-            /*
-            (1..10).forEach{
-                val ps = connection?.prepareStatement(
-                    "insert into `test` (text_field,int_field) values (?,?)"
-                )
-                ps?.setString(1,"Здесь было текстовое поле")
-                ps?.setInt(2,it)
-                val rows = ps?.executeUpdate()//количество строк подходящих под запрос
-                println(rows)
-            }
-             */
-        }catch (e: SQLException){
-            println("Ошибка создания таблицы: \n${e.toString()}")
-        }
-    }
-    */
-    /*
-    fun CreateDB(connection : Connection){
-        val s=connection.createStatement()
-
-        //Создание таблицы студенты
-        var sql_create ="create table if not exists `student` (\n" +
-                "    `id_student` int primary key auto_increment,\n" +
-                "    `lastname` varchar(40) not null,\n" +
-                "    `firstname` varchar(40) not null,\n" +
-                "    `middlename` varchar(40)  null,\n" +
-                "    `group` varchar(10) not null,\n" +
-                "    `sex` set('male','female') not null,\n" +
-                "    `birthday` date not null,\n" +
-                "    index `name` (`lastname`,`firstname`,`middlename`)\n" +
-                "                                      );"
-        s.execute(sql_create)
-
-        //Создание таблицы группа
-        sql_create="create table if not exists `group` (\n" +
-                "    `group_number` varchar(10) primary key,\n" +
-                "    `curriculum_id` int not null,\n" +
-                "    `qualification_number` set('1','2','3','4') not null\n" +
-                ");"
-        s.execute(sql_create)
-
-        //Создание таблицы квалификации
-        sql_create="create table if not exists `qualification`(\n" +
-                "    `number_qualification` int(1) not null primary key ,\n" +
-                "    `name_qualification` SET('bachelor','`s degree master','`s degree postgraduate study') NOT NULL\n" +
-                ");"
-        s.execute(sql_create)
-
-        //Создание таблицы направления
-        sql_create="create table if not exists `direction`(\n" +
-                "    `direction_code` int primary key,\n" +
-                "    `direction_name` varchar(30) not null\n" +
-                ");"
-        s.execute(sql_create)
-
-        sql_create="CREATE TABLE if not exists `discipline` (\n" +
-                "`lesson_code` INT NOT NULL AUTO_INCREMENT primary key ,\n" +
-                "`lesson_name` VARCHAR(30) NOT NULL ,\n" +
-                "`department_code` INT NOT NULL \n"+
-                ");"
-        s.execute(sql_create)
-
-        sql_create="create table if not exists `department` (\n"+
-                "`department_code` int  auto_increment primary key,\n"+
-                "`department_name` varchar(30) not null \n"+
-                ");"
-        s.execute(sql_create)
-
-        sql_create="create table if not exists `curriculum` (\n"+
-                "`id_curriculum` int auto_increment primary key,\n"+
-                "`year_study` int(4) not null,\n"+
-                "`direction_code` int not null \n"+
-                ");"
-        s.execute(sql_create)
-        /*
-        sql_create="create table if not exists `curriculum_lessons` (\n"+
-                "`id` int primary key auto_increment,\n"+
-                "`id_curriculum` int not null ,\n"+
-                "`lesson_code` int not null , \n"+
-                "`semestr` "
-         */
-    }
-    fun ConnectDB( connection: Connection){
-        val sql_connect="alter table `students` add foreign key (`group`) references `groups`(`group_number`) on delete restrict on update cascade"
-        val s=connection.createStatement()
-        s.execute(sql_connect)
-    }
-     */
 }
