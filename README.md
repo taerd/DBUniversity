@@ -5,13 +5,10 @@
 <b2> Реализация: <br></b2>
 a)Добавление модулей работы с базами данных mysql:mysql-connector-java 8.0.23 <br>
 b)Создание базы данных с учетом ее проектирования ( на счет нормальной формы не проверял, но где то 3KNF или BKNF) <br>
-
-<br>
-![universityDBproekt](https://user-images.githubusercontent.com/50706625/111218918-7498a600-85e8-11eb-8d0e-adb8c52f2826.jpg)
+![image](https://user-images.githubusercontent.com/50706625/111218918-7498a600-85e8-11eb-8d0e-adb8c52f2826.jpg)
 <br>
 ![image](https://user-images.githubusercontent.com/50706625/111466562-825b4200-8734-11eb-84c9-c16f7c62689d.png)
 <br>
-
 c)Этап программирования <br>
 
 <b2>Просмотр базы данных: <br> </b2>
