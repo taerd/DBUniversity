@@ -1,3 +1,5 @@
+import java.io.BufferedReader
+import java.io.FileReader
 import java.sql.*
 
 /**
@@ -18,6 +20,8 @@ class DBHelper(
 ) {
 
     private var connection : Connection?=null
+    //private var fileReader : BufferedReader?=null
+    //private var line : String?=null
     private var statement: Statement? = null
 
     /**
@@ -26,7 +30,6 @@ class DBHelper(
     fun createDatabase(){
         connect()
         createTables()
-
         disconnect()
     }
 
@@ -80,9 +83,9 @@ class DBHelper(
             addBatch("DROP TABLE IF EXISTS `student`")
             addBatch("CREATE TABLE `student` (\n" +
                     "  `id_student` int NOT NULL PRIMARY KEY AUTO_INCREMENT,\n" +
-                    "  `lastname` varchar(40) NOT NULL,\n" +
-                    "  `firstname` varchar(40) NOT NULL,\n" +
-                    "  `middlename` varchar(40) DEFAULT NULL,\n" +
+                    "  `lastname` varchar(50) NOT NULL,\n" +
+                    "  `firstname` varchar(50) NOT NULL,\n" +
+                    "  `middlename` varchar(50) DEFAULT NULL,\n" +
                     "  `group` varchar(10) NOT NULL,\n" +
                     "  `sex` set('male','female') NOT NULL,\n" +
                     "  `birthday` date NOT NULL\n" +
@@ -98,20 +101,20 @@ class DBHelper(
             addBatch("DROP TABLE IF EXISTS `discipline`")
             addBatch("CREATE TABLE `discipline` (\n" +
                     "  `subject_code` int NOT NULL PRIMARY KEY,\n" +
-                    "  `subject_name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,\n" +
+                    "  `subject_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,\n" +
                     "  `department_code` int NOT NULL\n" +
                     ")")
 
             addBatch("DROP TABLE IF EXISTS `direction`")
             addBatch("CREATE TABLE `direction` (\n" +
                     "  `direction_code` int NOT NULL PRIMARY KEY,\n" +
-                    "  `direction_name` varchar(30) NOT NULL\n" +
+                    "  `direction_name` varchar(50) NOT NULL\n" +
                     ")")
 
             addBatch("DROP TABLE IF EXISTS `department`")
             addBatch("CREATE TABLE `department` (\n" +
                     "  `department_code` int NOT NULL PRIMARY KEY,\n" +
-                    "  `department_name` varchar(30) NOT NULL\n" +
+                    "  `department_name` varchar(50) NOT NULL\n" +
                     ")")
 
             addBatch("DROP TABLE IF EXISTS `curriculum_subject`")
@@ -170,6 +173,38 @@ class DBHelper(
             addBatch("COMMIT")
             executeBatch()
         }
+
+    }
+    public fun ReadDataCsv(userdata : String){
+        try{
+
+            //нужно сделать проверку на наличие в userdata расширения ".csv" в конце
+
+            val fileReader = BufferedReader(FileReader(userdata))
+            fileReader.readLine()
+            var line=fileReader.readLine()
+            var cnt =0
+            while(line!=null){
+                val tokens = line.split(",")
+                if(tokens.size>0){
+                    try{
+                        var sql_add=""
+                        tokens.forEach{
+                            sql_add+=it+","
+                        }
+                        statement?.execute("INSERT INTO `${userdata}` value (${tokens[0]}, ${tokens[1]})")
+                        cnt++
+                    }catch (e: Exception){
+                        println("Ошибка чтения строки № ${cnt} : \n ${e.toString()}")
+                    }
+                }
+                line=fileReader.readLine()
+            }
+
+        }catch (e: Exception){
+            println("Не удалось прочитать файл : \n${e.toString()}")
+        }
+
 
     }
 

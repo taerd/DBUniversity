@@ -1,3 +1,7 @@
 fun main(){
-    DBHelper("university").createDatabase()
+    val db = DBHelper("university")
+    db.run{
+        ReadDataCsv("department.csv")
+        ReadDataCsv("d")
+    }
 }
