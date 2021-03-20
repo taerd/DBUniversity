@@ -1,5 +1,3 @@
-import java.io.BufferedReader
-import java.io.FileReader
 import java.sql.*
 
 /**
@@ -30,7 +28,7 @@ class DBHelper(
     fun createDatabase(){
         connect()
         createTables()
-        disconnect()
+        //disconnect()
     }
 
     /**
@@ -80,7 +78,24 @@ class DBHelper(
         statement?.run{
             addBatch("START TRANSACTION;")
 
+            addBatch("DROP TABLE IF EXISTS `academic_perfomance`")
             addBatch("DROP TABLE IF EXISTS `student`")
+            addBatch("DROP TABLE IF EXISTS  `group`")
+            addBatch("DROP TABLE IF EXISTS `curriculum_subject`")
+
+            addBatch("DROP TABLE IF EXISTS `curriculum`")
+            addBatch("DROP TABLE IF EXISTS `direction`")
+
+            addBatch("DROP TABLE IF EXISTS `discipline`")
+            addBatch("DROP TABLE IF EXISTS `department`")
+
+            //Конец транзакции
+            addBatch("COMMIT")
+            executeBatch()
+
+            addBatch("START TRANSACTION;")
+
+
             addBatch("CREATE TABLE `student` (\n" +
                     "  `id_student` int NOT NULL PRIMARY KEY AUTO_INCREMENT,\n" +
                     "  `lastname` varchar(50) NOT NULL,\n" +
@@ -91,33 +106,33 @@ class DBHelper(
                     "  `birthday` date NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS  `group`")
+
             addBatch("CREATE TABLE `group` (\n" +
                     "  `group_number` varchar(10) NOT NULL PRIMARY KEY,\n" +
                     "  `curriculum_id` int NOT NULL,\n" +
                     "  `qualification_number` set('bachelor','master','graduate') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `discipline`")
+
             addBatch("CREATE TABLE `discipline` (\n" +
                     "  `subject_code` int NOT NULL PRIMARY KEY,\n" +
-                    "  `subject_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,\n" +
+                    "  `subject_name` varchar(50)  NOT NULL,\n" +
                     "  `department_code` int NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `direction`")
+
             addBatch("CREATE TABLE `direction` (\n" +
                     "  `direction_code` int NOT NULL PRIMARY KEY,\n" +
                     "  `direction_name` varchar(50) NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `department`")
+
             addBatch("CREATE TABLE `department` (\n" +
                     "  `department_code` int NOT NULL PRIMARY KEY,\n" +
-                    "  `department_name` varchar(50) NOT NULL\n" +
+                    "  `department_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `curriculum_subject`")
+
             addBatch("CREATE TABLE `curriculum_subject` (\n" +
                     "  `subject_id` int NOT NULL PRIMARY KEY,\n" +
                     "  `curriculum_number` int NOT NULL,\n" +
@@ -127,14 +142,14 @@ class DBHelper(
                     "  `reporting_form` set('test','differential_test','exam') NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `curriculum`")
+
             addBatch("CREATE TABLE `curriculum` (\n" +
                     "  `curriculum_number` int NOT NULL PRIMARY KEY,\n" +
                     "  `year_study` year NOT NULL,\n" +
                     "  `direction_code` int NOT NULL\n" +
                     ")")
 
-            addBatch("DROP TABLE IF EXISTS `academic_perfomance`")
+
             addBatch("CREATE TABLE `academic_perfomance` (\n" +
                     "  `id_student` int NOT NULL  ,\n" +
                     "  `subject_id` int NOT NULL ,\n" +
@@ -142,11 +157,15 @@ class DBHelper(
                     "  `try` set('1','2','3') NOT NULL\n" +
                     ")")
 
+            //Конец транзакции
+            addBatch("COMMIT")
+            executeBatch()
 
+
+            addBatch("START TRANSACTION;")
             addBatch("ALTER TABLE `academic_perfomance`\n" +
                     "  ADD PRIMARY KEY (`id_student`,`subject_id`),\n" +
-                    "  ADD KEY `academic_perfomance_ibfk_2` (`subject_id`)")
-
+                    "  ADD KEY  `academic_perfomance_ibfk_1` (`subject_id`)")
 
             //Связывание Таблиц
             addBatch("ALTER TABLE `academic_perfomance`\n" +
@@ -161,7 +180,7 @@ class DBHelper(
                     "  ADD CONSTRAINT `curriculum_subject_ibfk_2` FOREIGN KEY (`subject_code`) REFERENCES `discipline` (`subject_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
 
             addBatch("ALTER TABLE `discipline`\n" +
-                    "  ADD CONSTRAINT `discipline_ibfk_1` FOREIGN KEY (`department_code`) REFERENCES `department` (`department_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+                    "  ADD CONSTRAINT `discipline_department` FOREIGN KEY (`department_code`) REFERENCES `department` (`department_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
 
             addBatch("ALTER TABLE `group`\n" +
                     "  ADD CONSTRAINT `group_curriculum` FOREIGN KEY (`curriculum_id`) REFERENCES `curriculum` (`curriculum_number`) ON DELETE RESTRICT ON UPDATE CASCADE;")
@@ -176,36 +195,19 @@ class DBHelper(
 
     }
     public fun ReadDataCsv(userdata : String){
-        try{
-
-            //нужно сделать проверку на наличие в userdata расширения ".csv" в конце
-
-            val fileReader = BufferedReader(FileReader(userdata))
-            fileReader.readLine()
-            var line=fileReader.readLine()
-            var cnt =0
-            while(line!=null){
-                val tokens = line.split(",")
-                if(tokens.size>0){
-                    try{
-                        var sql_add=""
-                        tokens.forEach{
-                            sql_add+=it+","
-                        }
-                        statement?.execute("INSERT INTO `${userdata}` value (${tokens[0]}, ${tokens[1]})")
-                        cnt++
-                    }catch (e: Exception){
-                        println("Ошибка чтения строки № ${cnt} : \n ${e.toString()}")
-                    }
-                }
-                line=fileReader.readLine()
-            }
-
-        }catch (e: Exception){
-            println("Не удалось прочитать файл : \n${e.toString()}")
-        }
-
-
+        val validData = userdata.split(".csv")
+        statement?.execute("LOAD DATA INFILE 'd:/programs/openserver/userdata/php_upload/${validData[0]}.csv'\n" +
+                "INTO TABLE `${validData[0]}`\n" +
+                "FIELDS TERMINATED BY ';' ENCLOSED BY '\"' ESCAPED BY '\\\\'\n" +
+                "LINES STARTING BY '' TERMINATED BY '\\n'")
     }
+    public fun test(){
+        statement?.execute("INSERT INTO `curriculum_subject`\n" +
+                "(`subject_id`, `curriculum_number`,\n" +
+                " `subject_code`, `semestr`,\n" +
+                " `number_of_hours`, `reporting_form`) \n" +
+                "VALUES (1,1,1,1,1,\"1\")")
+    }
+
 
 }
