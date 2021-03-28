@@ -1,3 +1,4 @@
+import java.io.File
 import java.sql.*
 
 /**
@@ -18,8 +19,6 @@ class DBHelper(
 ) {
 
     private var connection : Connection?=null
-    //private var fileReader : BufferedReader?=null
-    //private var line : String?=null
     private var statement: Statement? = null
 
     /**
@@ -65,7 +64,7 @@ class DBHelper(
     /**
      * Метод закрытия подключения.утверждения
      */
-    private fun disconnect() {
+    public fun disconnect() {
         statement?.close()
     }
 
@@ -78,7 +77,7 @@ class DBHelper(
         statement?.run{
             addBatch("START TRANSACTION;")
 
-            addBatch("DROP TABLE IF EXISTS `academic_perfomance`")
+            addBatch("DROP TABLE IF EXISTS `academic_performance`")
             addBatch("DROP TABLE IF EXISTS `student`")
             addBatch("DROP TABLE IF EXISTS  `group`")
             addBatch("DROP TABLE IF EXISTS `curriculum_subject`")
@@ -96,61 +95,61 @@ class DBHelper(
             addBatch("START TRANSACTION;")
 
 
-            addBatch("CREATE TABLE `student` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS`student` (\n" +
                     "  `id_student` int NOT NULL PRIMARY KEY AUTO_INCREMENT,\n" +
                     "  `lastname` varchar(50) NOT NULL,\n" +
                     "  `firstname` varchar(50) NOT NULL,\n" +
                     "  `middlename` varchar(50) DEFAULT NULL,\n" +
-                    "  `group` varchar(10) NOT NULL,\n" +
-                    "  `sex` set('male','female') NOT NULL,\n" +
-                    "  `birthday` date NOT NULL\n" +
+                    "  `gender` set('М','Ж') NOT NULL,\n" +
+                    "  `birthday` date NOT NULL,\n" +
+                    "  `group` varchar(10) NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `group` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `group` (\n" +
                     "  `group_number` varchar(10) NOT NULL PRIMARY KEY,\n" +
                     "  `curriculum_id` int NOT NULL,\n" +
-                    "  `qualification_number` set('bachelor','master','graduate') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL\n" +
+                    "  `qualification_number` set('бакалавр','магистр','специалитет') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `discipline` (\n" +
-                    "  `subject_code` int NOT NULL PRIMARY KEY,\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `discipline` (\n" +
+                    "  `subject_code` varchar(30) NOT NULL PRIMARY KEY,\n" +
                     "  `subject_name` varchar(50)  NOT NULL,\n" +
                     "  `department_code` int NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `direction` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `direction` (\n" +
                     "  `direction_code` int NOT NULL PRIMARY KEY,\n" +
                     "  `direction_name` varchar(50) NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `department` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `department` (\n" +
                     "  `department_code` int NOT NULL PRIMARY KEY,\n" +
                     "  `department_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `curriculum_subject` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `curriculum_subject` (\n" +
                     "  `subject_id` int NOT NULL PRIMARY KEY,\n" +
                     "  `curriculum_number` int NOT NULL,\n" +
-                    "  `subject_code` int NOT NULL,\n" +
-                    "  `semestr` int UNSIGNED NOT NULL,\n" +
+                    "  `subject_code` varchar(30) NOT NULL,\n" +
+                    "  `semester` int UNSIGNED NOT NULL,\n" +
                     "  `number_of_hours` int UNSIGNED NOT NULL,\n" +
-                    "  `reporting_form` set('test','differential_test','exam') NOT NULL\n" +
+                    "  `reporting_form` set('зачет','экзамен','отсутствует') NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `curriculum` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `curriculum` (\n" +
                     "  `curriculum_number` int NOT NULL PRIMARY KEY,\n" +
                     "  `year_study` year NOT NULL,\n" +
                     "  `direction_code` int NOT NULL\n" +
                     ")")
 
 
-            addBatch("CREATE TABLE `academic_perfomance` (\n" +
+            addBatch("CREATE TABLE IF NOT EXISTS `academic_performance` (\n" +
                     "  `id_student` int NOT NULL  ,\n" +
                     "  `subject_id` int NOT NULL ,\n" +
                     "  `score` tinyint NOT NULL,\n" +
@@ -163,14 +162,14 @@ class DBHelper(
 
 
             addBatch("START TRANSACTION;")
-            addBatch("ALTER TABLE `academic_perfomance`\n" +
+            addBatch("ALTER TABLE `academic_performance`\n" +
                     "  ADD PRIMARY KEY (`id_student`,`subject_id`),\n" +
-                    "  ADD KEY  `academic_perfomance_ibfk_1` (`subject_id`)")
+                    "  ADD KEY  `academic_performance_ibfk_1` (`subject_id`)")
 
             //Связывание Таблиц
-            addBatch("ALTER TABLE `academic_perfomance`\n" +
-                    "  ADD CONSTRAINT `academic_perfomance_ibfk_1` FOREIGN KEY (`id_student`) REFERENCES `student` (`id_student`) ON DELETE RESTRICT ON UPDATE CASCADE,\n" +
-                    "  ADD CONSTRAINT `academic_perfomance_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `curriculum_subject` (`subject_id`) ON DELETE RESTRICT ON UPDATE CASCADE;")
+            addBatch("ALTER TABLE `academic_performance`\n" +
+                    "  ADD CONSTRAINT `academic_performance_ibfk_1` FOREIGN KEY (`id_student`) REFERENCES `student` (`id_student`) ON DELETE RESTRICT ON UPDATE CASCADE,\n" +
+                    "  ADD CONSTRAINT `academic_performance_ibfk_2` FOREIGN KEY (`subject_id`) REFERENCES `curriculum_subject` (`subject_id`) ON DELETE RESTRICT ON UPDATE CASCADE;")
 
             addBatch("ALTER TABLE `curriculum`\n" +
                     "  ADD CONSTRAINT `curriculum_direction` FOREIGN KEY (`direction_code`) REFERENCES `direction` (`direction_code`) ON DELETE RESTRICT ON UPDATE CASCADE;")
@@ -194,20 +193,89 @@ class DBHelper(
         }
 
     }
-    public fun ReadDataCsv(userdata : String){
+
+    /**
+     * Метод прочтения данных для таблицы из формата csv и ее запись
+     * @param userdata - название таблицы,в которую нужно записать данные и названия файла,который нужно записать
+     */
+    fun readDataCsv(userdata : String){
         val validData = userdata.split(".csv")
         statement?.execute("LOAD DATA INFILE 'd:/programs/openserver/userdata/php_upload/${validData[0]}.csv'\n" +
                 "INTO TABLE `${validData[0]}`\n" +
                 "FIELDS TERMINATED BY ';' ENCLOSED BY '\"' ESCAPED BY '\\\\'\n" +
                 "LINES STARTING BY '' TERMINATED BY '\\n'")
     }
-    public fun test(){
-        statement?.execute("INSERT INTO `curriculum_subject`\n" +
-                "(`subject_id`, `curriculum_number`,\n" +
-                " `subject_code`, `semestr`,\n" +
-                " `number_of_hours`, `reporting_form`) \n" +
-                "VALUES (1,1,1,1,1,\"1\")")
+
+    /**
+     * Метод заполнения таблицы через insert into, в каждое поле кортежа записываются данные
+     * в формате "$name", где name - значение типа string, СУБД преобразует varchar в нужные форматы полей
+     * @param userdata - название таблицы
+     */
+    fun fillTableFromCsv(userdata : String){
+        val validData = userdata.split(".csv")
+        try{
+            val bufferedData = File("d:/programs/openserver/userdata/php_upload/"+validData[0]+".csv").bufferedReader()
+            val requestTemplate = "INSERT INTO `${validData[0]}`" +
+                    "("+ getDataFromTable(validData[0]) +") VALUES "
+            while(bufferedData.ready()){
+                var request = "$requestTemplate("
+                val data = bufferedData.readLine().split(';')
+                data.forEachIndexed { i, name ->
+                    request += "\"$name\""
+                    if(i<data.size -1) request+=','
+                }
+                request+=')'
+                statement?.addBatch(request)
+            }
+            statement?.executeBatch()
+            statement?.clearBatch()
+        } catch(e: Exception){
+            println(e.toString())
+        }
+
     }
 
+    /**
+     * Метод выдает данные из таблиц в субд (реализованно название атрибутов таблицы, закоментирован код для доставания типов атрибутов таблицы)
+     * @param userdata название таблицы
+     */
+    private fun getDataFromTable(userdata : String): String{
+        val query = "SHOW COLUMNS FROM `${userdata}`"
+        val resultSet = statement?.executeQuery(query)
+        var resultData = ""
+        if (resultSet != null){
+            //get column name
+            while (resultSet.next()){
+                resultData+= "`"+resultSet.getString(1)+"` ,"
+            }
+            resultData= resultData.substring(0,(resultData.length)-2)
+            /*
+            if(columnName){
+                //get column name
+                while (resultSet.next()){
+                    resultData+= "`"+resultSet.getString(1)+"` ,"
+                }
+                resultData= resultData.substring(0,(resultData.length)-4)
+            }
+            else {
+                //get type of column ( Not Worked now )
+                while (resultSet.next()){
+                    val currentField = resultSet.getString(1)
+                    val validField = currentField.split("(")
+                    println(validField)
+                    println(map.get(validField[0]))
 
+                    resultData+= map.get(validField[0])
+                }
+            }
+             */
+        }
+        return resultData
+    }
+    //val map = mapOf("int" to Int,"varchar" to String,"set" to String)//date=?
+    /*
+    public fun test(){
+        statement?.execute("INSERT INTO `curriculum_subject`(`subject_id`, `curriculum_number`, `subject_code`, `semestr`, `number_of_hours`, `reporting_form`) VALUES (1,1,1,1,72,\"test\"),(2,1,2,2,144,\"exam\")")
+    }
+     */
 }
