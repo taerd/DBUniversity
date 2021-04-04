@@ -101,7 +101,7 @@ class DBHelper(
             var query = ""
             File(userdata).forEachLine {
                 if(!it.startsWith("--") && it.isNotEmpty()){
-                    query += it;
+                    query += it
                     if (it.endsWith(';')) {
                         statement?.addBatch(query)
                         query = ""
@@ -346,6 +346,13 @@ class DBHelper(
              */
         }
         return resultData
+    }
+    fun getQuery(sql : String){
+        val rs =statement?.executeQuery(sql)
+        while(rs?.next()==true){
+            println(rs.getString(1)+";"+rs.getString(2)+";"+rs.getString(3)+";"+rs.getString(4)+";"+rs.getString(5))
+
+        }
     }
     //val map = mapOf("int" to Int,"varchar" to String,"set" to String)//date=?
     /*
