@@ -2,21 +2,33 @@ import java.io.File
 
 fun main(){
 
-    //changeData() для Студентов менял дату
-
     val db = DBHelper("university")
+
+    /*
+    Создание бд по шаблону
     db.createDatabase()
+    */
+
+    //Создание бд из дампа
+    db.createDatabase("university.sql")
 
     db.run{
+        /*
+        Второй способ заполнения таблицы (быстрее чем fill)
         readDataCsv("department.csv")
         readDataCsv("discipline.csv")
         readDataCsv("direction.csv")
         readDataCsv("curriculum.csv")
+        */
+
+        fillTableFromCsv("department.csv")
+        fillTableFromCsv("discipline.csv")
+        fillTableFromCsv("direction.csv")
+        fillTableFromCsv("curriculum.csv")
         fillTableFromCsv("curriculum_subject.csv")
         fillTableFromCsv("group.csv")
         fillTableFromCsv("student.csv")
         fillTableFromCsv("academic_performance.csv")
-
     }
     db.disconnect()
 }
